@@ -3,6 +3,8 @@ package org.example.DataAccess.services;
 import org.example.Domain.models.Car;
 import org.example.Domain.models.Maintenance;
 import org.example.Domain.models.MaintenanceType;
+import org.example.Domain.models.User;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -43,12 +45,29 @@ public class MaintenanceService {
         }
     }
 
-    public List<Maintenance> getAllMaintenanceByCarId(Long carId) {
+    public List<Maintenance> getAllMaintenances() {
         try (Session session = sessionFactory.openSession()) {
-            return session.createQuery(
-                    "FROM Maintenance m WHERE m.carMaintenance.id = :carId", Maintenance.class)
-                    .setParameter("carId", carId)
+            List<Maintenance> maintenances = session.createQuery("FROM Maintenance", Maintenance.class).list();
+            maintenances.forEach(maintenance -> Hibernate.initialize(maintenance.getCarMaintenance().getOwner())); // Incluir tambien al dueno
+            return maintenances;
+        } catch (Exception e) {
+            String message = String.format("An error occurred when processing: %s. Details: %s", "getAllMaintenances", e);
+            System.out.println(message);
+            throw e;
+        }
+    }
+
+    public List<Maintenance> getMaintenancesByCar(Car car) {
+        try (Session session = sessionFactory.openSession()) {
+            List<Maintenance> maintenances = session.createQuery("FROM Maintenance WHERE Car = :car", Maintenance.class)
+                    .setParameter("car", car)
                     .list();
+            maintenances.forEach(maintenance -> Hibernate.initialize(maintenance.getCarMaintenance().getOwner())); // Incluir tambien al dueno
+            return maintenances;
+        } catch (Exception e) {
+            String message = String.format("An error occurred when processing: %s. Details: %s", "getMaintenancesByCar", e);
+            System.out.println(message);
+            throw e;
         }
     }
 

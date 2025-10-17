@@ -1,17 +1,12 @@
 package org.example.API.controllers;
 
 import com.google.gson.Gson;
-import org.example.DataAccess.services.MaintenanceService;
 import org.example.Domain.dtos.RequestDto;
 import org.example.Domain.dtos.ResponseDto;
 import org.example.Domain.dtos.auth.UserResponseDto;
-import org.example.Domain.dtos.cars.*;
-import org.example.Domain.dtos.maintenances.AddMaintenanceRequestDto;
-import org.example.Domain.dtos.maintenances.DeleteMaintenanceRequestDto;
-import org.example.Domain.dtos.maintenances.UpdateMaintenanceRequestDto;
-import org.example.Domain.models.Car;
+import org.example.Domain.dtos.maintenances.*;
 import org.example.Domain.models.Maintenance;
-
+import org.example.DataAccess.services.MaintenanceService;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -113,14 +108,14 @@ public class MaintenanceController {
             }
 
             List<Maintenance> maintenances = maintenanceService.getAllMaintenances();
-            List<CarResponseDto> maintenanceDtos = maintenances.stream()
+            List<MaintenanceResponseDto> maintenanceDtos = maintenances.stream()
                     .map(this::toResponseDto)
                     .collect(Collectors.toList());
 
-            ListCarsResponseDto response = new ListCarsResponseDto(carDtos);
-            return new ResponseDto(true, "Cars retrieved successfully", gson.toJson(response));
+            ListMaintenanceRequestDto response = new ListMaintenanceRequestDto(maintenanceDtos);
+            return new ResponseDto(true, "Maintenances retrieved successfully", gson.toJson(response));
         } catch (Exception e) {
-            System.out.println("Error in handleListCars: " + e.getMessage());
+            System.out.println("Error in handleListMaintenances: " + e.getMessage());
             throw e;
         }
     }
@@ -132,40 +127,36 @@ public class MaintenanceController {
                 return new ResponseDto(false, "Unauthorized", null);
             }
 
-            DeleteCarRequestDto dto = gson.fromJson(request.getData(), DeleteCarRequestDto.class);
-            Car car = carService.getCarById(dto.getId());
+            DeleteMaintenanceRequestDto dto = gson.fromJson(request.getData(), DeleteMaintenanceRequestDto.class);
+            Maintenance maintenance = maintenanceService.getMaintenanceById(dto.getId());
 
-            if (car == null) {
-                return new ResponseDto(false, "Car not found", null);
+            if (maintenance == null) {
+                return new ResponseDto(false, "Maintenance not found", null);
             }
 
-            CarResponseDto response = toResponseDto(car);
-            return new ResponseDto(true, "Car retrieved successfully", gson.toJson(response));
+            MaintenanceResponseDto response = toResponseDto(maintenance);
+            return new ResponseDto(true, "Maintenance retrieved successfully", gson.toJson(response));
         } catch (Exception e) {
-            System.out.println("Error in handleGetCar: " + e.getMessage());
+            System.out.println("Error in handleGetMaintenance: " + e.getMessage());
             throw e;
         }
     }
 
     // --- Helper method ---
     private MaintenanceResponseDto toResponseDto(Maintenance maintenance) {
-        var owner =  new UserResponseDto(
-                maintenance.getCarMaintenance().getId(),
-                maintenance.getCarMaintenance().getMake(),
-                maintenance.getCarMaintenance().,
-                maintenance.getCarMaintenance().getRole(),
-                maintenance.getCarMaintenance().getCreatedAt().toString(),
-                maintenance.getCarMaintenance().getUpdatedAt().toString()
+        var car = new UserResponseDto(
+                maintenance.getCarMaintenance().getOwner().getId(),
+                maintenance.getCarMaintenance().getOwner().getUsername(),
+                maintenance.getCarMaintenance().getOwner().getEmail(),
+                maintenance.getCarMaintenance().getOwner().getRole()
         );
 
-        return new CarResponseDto(
+        return new MaintenanceResponseDto(
                 maintenance.getId(),
-                maintenance.getMake(),
-                maintenance.getModel(),
-                maintenance.getYear(),
-                owner,
-                maintenance.getCreatedAt().toString(),
-                maintenance.getUpdatedAt().toString()
+                maintenance.getDescription(),
+                maintenance.getType(),
+                maintenance.getCarMaintenance().getId(), // pasamos solo el ID del carro
+                owner
         );
     }
 }
